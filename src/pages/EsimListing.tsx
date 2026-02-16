@@ -3,16 +3,18 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Layout from "@/components/Layout";
 import EsimCard from "@/components/EsimCard";
-import { mockEsims, regions, dataFilters } from "@/data/mockEsims";
+import { regions, dataFilters } from "@/data/mockEsims";
+import { useProducts } from "@/hooks/useApi";
 import { motion } from "framer-motion";
 
 const EsimListing = () => {
   const [search, setSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState("All");
   const [dataFilter, setDataFilter] = useState("All");
+  const { data: products = [], isLoading } = useProducts();
 
   const filtered = useMemo(() => {
-    return mockEsims.filter((e) => {
+    return products.filter((e) => {
       const matchesSearch =
         e.country.toLowerCase().includes(search.toLowerCase()) ||
         e.name.toLowerCase().includes(search.toLowerCase());
@@ -98,7 +100,13 @@ const EsimListing = () => {
             {filtered.length} plan{filtered.length !== 1 ? "s" : ""} found
           </p>
 
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="h-48 animate-pulse rounded-xl bg-muted" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="py-16 text-center text-muted-foreground">
               No plans found. Try adjusting your filters.
             </div>

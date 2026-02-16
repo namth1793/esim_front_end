@@ -1,15 +1,25 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Wifi, Clock, Zap, MapPin, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Wifi, Clock, Zap, MapPin, ShoppingCart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Layout from "@/components/Layout";
 import InstallationGuide from "@/components/InstallationGuide";
-import { mockEsims } from "@/data/mockEsims";
+import { useProduct } from "@/hooks/useApi";
 import { motion } from "framer-motion";
 
 const EsimDetail = () => {
   const { id } = useParams();
-  const esim = mockEsims.find((e) => e.id === id);
+  const { data: esim, isLoading } = useProduct(id);
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   if (!esim) {
     return (

@@ -2,10 +2,11 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EsimCard from "./EsimCard";
-import { mockEsims } from "@/data/mockEsims";
+import { useFeaturedProducts } from "@/hooks/useApi";
 
 const FeaturedPackages = () => {
-  const featured = mockEsims.filter((e) => e.popular).slice(0, 4);
+  const { data: featured = [], isLoading } = useFeaturedProducts();
+  const displayed = featured.slice(0, 4);
 
   return (
     <section className="py-16 md:py-24 bg-muted/50">
@@ -28,9 +29,13 @@ const FeaturedPackages = () => {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((esim, i) => (
-            <EsimCard key={esim.id} esim={esim} index={i} />
-          ))}
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-48 animate-pulse rounded-xl bg-muted" />
+              ))
+            : displayed.map((esim, i) => (
+                <EsimCard key={esim.id} esim={esim} index={i} />
+              ))}
         </div>
       </div>
     </section>
