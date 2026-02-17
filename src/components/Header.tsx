@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Globe, User } from "lucide-react";
+import { Menu, X, Globe, User, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
 
   const navLinks = [
     { to: "/", label: "Home" },
@@ -45,12 +47,21 @@ const Header = () => {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/login">
-              <User className="mr-2 h-4 w-4" />
-              Sign In
-            </Link>
-          </Button>
+          {user ? (
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/dashboard">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Dashboard
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/login">
+                <User className="mr-2 h-4 w-4" />
+                Sign In
+              </Link>
+            </Button>
+          )}
           <Button size="sm" className="bg-gradient-cta text-primary-foreground hover:opacity-90" asChild>
             <Link to="/esims">Browse eSIMs</Link>
           </Button>
@@ -91,11 +102,19 @@ const Header = () => {
                 </Link>
               ))}
               <div className="mt-2 flex flex-col gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/login" onClick={() => setMobileOpen(false)}>
-                    Sign In
-                  </Link>
-                </Button>
+                {user ? (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
+                      Dashboard
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/login" onClick={() => setMobileOpen(false)}>
+                      Sign In
+                    </Link>
+                  </Button>
+                )}
                 <Button size="sm" className="bg-gradient-cta text-primary-foreground" asChild>
                   <Link to="/esims" onClick={() => setMobileOpen(false)}>
                     Browse eSIMs
