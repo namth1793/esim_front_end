@@ -1,19 +1,14 @@
 /**
- * eSIM Provider Service (eSIM Access API)
- * =======================================
- * Activates eSIMs and retrieves installation data after payment.
- *
- * TO CONNECT REAL API:
- * - Set USE_MOCK to false in services/api.ts
- * - Ensure API_BASE_URLS.esimProvider is set
- * - Add your eSIM Access API key in API_HEADERS.esimProvider
+ * eSIM Provider Service
+ * =====================
+ * Activates eSIMs and retrieves installation data via backend REST API.
  */
 
-import { USE_MOCK, apiUrl, apiFetch, API_HEADERS } from "./api";
+import { USE_MOCK, apiUrl, apiFetch } from "./api";
 
 // ── Types ──────────────────────────────────────
 export interface EsimActivationRequest {
-  order_id: number;
+  order_id: string;
   product_id: string;
 }
 
@@ -25,6 +20,18 @@ export interface EsimActivationResult {
   status: "active" | "pending" | "failed";
 }
 
+export interface PurchasedEsim {
+  id: string;
+  order_id: string;
+  product_id: string;
+  esim_id: string | null;
+  qr_code_url: string | null;
+  smdp_address: string | null;
+  activation_code: string | null;
+  status: string;
+  created_at: string;
+}
+
 export interface EsimStatus {
   esim_id: string;
   status: "active" | "expired" | "pending";
@@ -34,7 +41,7 @@ export interface EsimStatus {
 
 // ── Service ────────────────────────────────────
 
-/** POST /esim/activate — activate an eSIM after payment */
+/** POST /esims/activate — activate an eSIM after payment */
 export async function activateEsim(
   request: EsimActivationRequest
 ): Promise<EsimActivationResult> {
@@ -49,15 +56,35 @@ export async function activateEsim(
     };
   }
 
-  // REAL API: POST /esim/activate
-  return apiFetch<EsimActivationResult>(
-    apiUrl("esimProvider", "/esim/activate"),
-    { method: "POST", body: JSON.stringify(request) },
-    API_HEADERS.esimProvider
-  );
+  return apiFetch<EsimActivationResult>(apiUrl("/esims/activate"), {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
 }
 
-/** GET /esim/{esimId}/status — check eSIM status */
+/** GET /esims — get current user's purchased eSIMs */
+export async function getMyEsims(): Promise<PurchasedEsim[]> {
+  if (USE_MOCK) {
+    await delay(500);
+    return [
+      {
+        id: "pe-001",
+        order_id: "order-10001",
+        product_id: "esim-turkey-3",
+        esim_id: "ESIM-ABC123",
+        qr_code_url: "https://sample.com/qrcode.png",
+        smdp_address: "smdp.sample.com",
+        activation_code: "ACT-XYZ789",
+        status: "active",
+        created_at: "2026-02-10T10:05:00Z",
+      },
+    ];
+  }
+
+  return apiFetch<PurchasedEsim[]>(apiUrl("/esims"), { method: "GET" });
+}
+
+/** GET /esims/{esimId}/status — check eSIM status */
 export async function getEsimStatus(esimId: string): Promise<EsimStatus> {
   if (USE_MOCK) {
     await delay(400);
@@ -69,12 +96,9 @@ export async function getEsimStatus(esimId: string): Promise<EsimStatus> {
     };
   }
 
-  // REAL API: GET /esim/{esimId}/status
-  return apiFetch<EsimStatus>(
-    apiUrl("esimProvider", `/esim/${esimId}/status`),
-    { method: "GET" },
-    API_HEADERS.esimProvider
-  );
+  return apiFetch<EsimStatus>(apiUrl(`/esims/${esimId}/status`), {
+    method: "GET",
+  });
 }
 
 // ── Helpers ────────────────────────────────────

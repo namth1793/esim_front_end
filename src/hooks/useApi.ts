@@ -7,9 +7,9 @@
 
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getProducts, getProductById, getFeaturedProducts } from "@/services/productService";
-import { createOrder, getOrder, getOrdersByEmail, type CreateOrderRequest } from "@/services/orderService";
+import { createOrder, getOrder, getMyOrders, processPayment, type CreateOrderRequest } from "@/services/orderService";
 import { verifyPayment } from "@/services/paymentService";
-import { activateEsim, getEsimStatus, type EsimActivationRequest } from "@/services/esimService";
+import { activateEsim, getEsimStatus, getMyEsims, type EsimActivationRequest } from "@/services/esimService";
 import { login, signup, forgotPassword } from "@/services/authService";
 
 // ── Product hooks ──────────────────────────────
@@ -44,7 +44,7 @@ export function useCreateOrder() {
   });
 }
 
-export function useOrder(orderId: number | undefined) {
+export function useOrder(orderId: string | undefined) {
   return useQuery({
     queryKey: ["order", orderId],
     queryFn: () => getOrder(orderId!),
@@ -52,11 +52,16 @@ export function useOrder(orderId: number | undefined) {
   });
 }
 
-export function useUserOrders(email: string | undefined) {
+export function useMyOrders() {
   return useQuery({
-    queryKey: ["orders", email],
-    queryFn: () => getOrdersByEmail(email!),
-    enabled: !!email,
+    queryKey: ["orders", "mine"],
+    queryFn: getMyOrders,
+  });
+}
+
+export function useProcessPayment() {
+  return useMutation({
+    mutationFn: (orderId: string) => processPayment(orderId),
   });
 }
 
@@ -64,7 +69,7 @@ export function useUserOrders(email: string | undefined) {
 
 export function useVerifyPayment() {
   return useMutation({
-    mutationFn: (orderId: number) => verifyPayment(orderId),
+    mutationFn: (orderId: string) => verifyPayment(orderId),
   });
 }
 
@@ -73,6 +78,13 @@ export function useVerifyPayment() {
 export function useActivateEsim() {
   return useMutation({
     mutationFn: (request: EsimActivationRequest) => activateEsim(request),
+  });
+}
+
+export function useMyEsims() {
+  return useQuery({
+    queryKey: ["esims", "mine"],
+    queryFn: getMyEsims,
   });
 }
 

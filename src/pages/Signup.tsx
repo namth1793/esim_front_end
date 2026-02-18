@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import Layout from "@/components/Layout";
 
 const Signup = () => {
   const { signUp } = useAuth();
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,11 +36,11 @@ const Signup = () => {
         <div className="min-h-[80vh] flex items-center justify-center px-4">
           <div className="w-full max-w-md text-center space-y-4 rounded-2xl border border-border bg-card p-8 shadow-card">
             <CheckCircle className="mx-auto h-12 w-12 text-accent" />
-            <h2 className="font-display text-xl font-bold text-foreground">Check your email</h2>
-            <p className="text-muted-foreground">We've sent a confirmation link to <strong className="text-foreground">{email}</strong>. Click it to activate your account.</p>
-            <Link to="/login">
-              <Button variant="outline" className="mt-4">Go to Login</Button>
-            </Link>
+            <h2 className="font-display text-xl font-bold text-foreground">Account created!</h2>
+            <p className="text-muted-foreground">Your account has been created successfully.</p>
+            <Button onClick={() => navigate("/dashboard")} className="bg-gradient-cta text-primary-foreground">
+              Go to Dashboard
+            </Button>
           </div>
         </div>
       </Layout>

@@ -2,13 +2,9 @@
  * API Configuration
  * =================
  * Central config for all API endpoints, headers, and auth.
- * 
- * TO CONNECT REAL APIs:
- * 1. Replace BASE URLs below with your actual API endpoints
- * 2. Add real API keys/tokens to the AUTH_HEADERS
- * 3. Remove the `USE_MOCK` flag or set it to false
- * 
- * No UI changes are required when switching from mock to real APIs.
+ *
+ * All data access goes through the backend REST API.
+ * No direct database/Supabase calls from the frontend.
  */
 
 // ──────────────────────────────────────────────
@@ -17,68 +13,93 @@
 export const USE_MOCK = true;
 
 // ──────────────────────────────────────────────
-// Base URLs — replace with real endpoints
+// Base URL — configurable via environment variable
 // ──────────────────────────────────────────────
-export const API_BASE_URLS = {
-  /** WooCommerce REST API base (products + orders) */
-  woocommerce: "https://api.sample-esim.com",
-
-  /** Amazon Pay / payment gateway */
-  payment: "https://amazonpay.sample.com",
-
-  /** eSIM Access provider API */
-  esimProvider: "https://esim-access.sample.com",
-
-  /** Auth API (your own backend) */
-  auth: "https://api.sample-esim.com/auth",
-} as const;
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://api.sample-esim.com";
 
 // ──────────────────────────────────────────────
-// Auth & Headers — replace with real credentials
+// Token management
 // ──────────────────────────────────────────────
-export const API_HEADERS = {
-  /** WooCommerce consumer key / secret (Base64 encoded) */
-  woocommerce: {
-    "Content-Type": "application/json",
-    // Authorization: "Basic <BASE64_ENCODED_CONSUMER_KEY:SECRET>",
-  },
+const TOKEN_KEY = "globesim_access_token";
 
-  /** eSIM Access API key */
-  esimProvider: {
-    "Content-Type": "application/json",
-    // "X-API-Key": "<YOUR_ESIM_ACCESS_API_KEY>",
-  },
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
 
-  /** Default JSON headers */
-  default: {
-    "Content-Type": "application/json",
-  },
-} as const;
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+}
 
-// ──────────────────────────────────────────────
-// Helper: build full URL for a service
-// ──────────────────────────────────────────────
-type ServiceName = keyof typeof API_BASE_URLS;
-
-export function apiUrl(service: ServiceName, path: string): string {
-  return `${API_BASE_URLS[service]}${path}`;
+export function removeToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 // ──────────────────────────────────────────────
-// Helper: generic fetch wrapper
+// Helper: build full URL
+// ──────────────────────────────────────────────
+export function apiUrl(path: string): string {
+  return `${API_BASE_URL}${path}`;
+}
+
+// ──────────────────────────────────────────────
+// Helper: build auth headers with JWT
+// ──────────────────────────────────────────────
+function authHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const token = getToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+// ──────────────────────────────────────────────
+// API Error class
+// ──────────────────────────────────────────────
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = "ApiError";
+  }
+}
+
+// ──────────────────────────────────────────────
+// Generic fetch wrapper with JWT auth
 // ──────────────────────────────────────────────
 export async function apiFetch<T>(
   url: string,
-  options: RequestInit = {},
-  headers: Record<string, string> = API_HEADERS.default
+  options: RequestInit = {}
 ): Promise<T> {
   const response = await fetch(url, {
     ...options,
-    headers: { ...headers, ...options.headers },
+    headers: { ...authHeaders(), ...(options.headers as Record<string, string>) },
   });
 
   if (!response.ok) {
-    throw new Error(`API error ${response.status}: ${response.statusText}`);
+    let message = `API error ${response.status}: ${response.statusText}`;
+    try {
+      const body = await response.json();
+      message = body.message || body.error || message;
+    } catch {
+      // use default message
+    }
+
+    // If 401, clear token (session expired)
+    if (response.status === 401) {
+      removeToken();
+    }
+
+    throw new ApiError(response.status, message);
+  }
+
+  // Handle 204 No Content
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json();
