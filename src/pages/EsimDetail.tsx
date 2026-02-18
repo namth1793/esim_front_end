@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Wifi, Clock, Zap, MapPin, ShoppingCart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 
 const EsimDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { data: esim, isLoading } = useProduct(id);
 
   if (isLoading) {
@@ -148,6 +149,7 @@ const EsimDetail = () => {
               <Button
                 size="lg"
                 className="w-full bg-gradient-cta text-primary-foreground font-semibold hover:opacity-90"
+                onClick={() => navigate(`/checkout?product=${esim.id}`)}
               >
                 <ShoppingCart className="mr-2 h-4 w-4" />
                 Buy Now
