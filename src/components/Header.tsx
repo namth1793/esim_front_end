@@ -4,6 +4,7 @@ import { Menu, X, Globe, User, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import ThemeToggle from "./ThemeToggle";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -46,7 +47,8 @@ const Header = () => {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-2 md:flex">
+          <ThemeToggle />
           {user ? (
             <Button variant="ghost" size="sm" asChild>
               <Link to="/dashboard">

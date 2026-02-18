@@ -1,6 +1,7 @@
 import Layout from "@/components/Layout";
 import HeroSection from "@/components/HeroSection";
 import BenefitsSection from "@/components/BenefitsSection";
+import HowItWorksSection from "@/components/HowItWorksSection";
 import FeaturedPackages from "@/components/FeaturedPackages";
 import CtaSection from "@/components/CtaSection";
 
@@ -9,6 +10,7 @@ const Index = () => {
     <Layout>
       <HeroSection />
       <BenefitsSection />
+      <HowItWorksSection />
       <FeaturedPackages />
       <CtaSection />
     </Layout>
