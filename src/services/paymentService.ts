@@ -1,18 +1,14 @@
 /**
- * Payment Service (Amazon Pay)
- * ============================
- * Handles payment redirect and status verification.
- *
- * TO CONNECT REAL API:
- * - Set USE_MOCK to false in services/api.ts
- * - Ensure API_BASE_URLS.payment is set to your Amazon Pay endpoint
+ * Payment Service
+ * ===============
+ * Handles payment redirect and status verification via backend REST API.
  */
 
-import { USE_MOCK, apiUrl, apiFetch, API_HEADERS } from "./api";
+import { USE_MOCK, apiUrl, apiFetch } from "./api";
 
 // ── Types ──────────────────────────────────────
 export interface PaymentResult {
-  order_id: number;
+  order_id: string;
   payment_status: "paid" | "failed" | "pending";
   transaction_id?: string;
 }
@@ -20,26 +16,22 @@ export interface PaymentResult {
 // ── Service ────────────────────────────────────
 
 /**
- * Redirect user to Amazon Pay checkout.
- * In mock mode, simulates a redirect and auto-resolves as paid.
+ * Redirect user to payment gateway.
+ * In mock mode, simulates a redirect.
  */
 export function redirectToPayment(paymentUrl: string): void {
   if (USE_MOCK) {
-    // In mock mode we don't actually redirect.
-    // The UI should call verifyPayment() after a short delay.
     console.log(`[MOCK] Would redirect to: ${paymentUrl}`);
     return;
   }
 
-  // REAL: redirect the browser to Amazon Pay
   window.location.href = paymentUrl;
 }
 
 /**
  * Verify payment status after callback / redirect.
- * Called when user returns from payment gateway.
  */
-export async function verifyPayment(orderId: number): Promise<PaymentResult> {
+export async function verifyPayment(orderId: string): Promise<PaymentResult> {
   if (USE_MOCK) {
     await delay(1000);
     return {
@@ -49,12 +41,9 @@ export async function verifyPayment(orderId: number): Promise<PaymentResult> {
     };
   }
 
-  // REAL API: GET /payment/verify/{orderId}
-  return apiFetch<PaymentResult>(
-    apiUrl("payment", `/verify/${orderId}`),
-    { method: "GET" },
-    API_HEADERS.default
-  );
+  return apiFetch<PaymentResult>(apiUrl(`/payments/verify/${orderId}`), {
+    method: "GET",
+  });
 }
 
 // ── Helpers ────────────────────────────────────

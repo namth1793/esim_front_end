@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,20 +10,13 @@ import Layout from "@/components/Layout";
 const ResetPassword = () => {
   const { updatePassword } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const resetToken = params.get("token") || "";
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [valid, setValid] = useState(false);
-
-  useEffect(() => {
-    // Check for recovery token in URL hash
-    const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
-      setValid(true);
-    }
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +26,7 @@ const ResetPassword = () => {
     }
     setError("");
     setLoading(true);
-    const { error } = await updatePassword(password);
+    const { error } = await updatePassword(resetToken, password);
     setLoading(false);
     if (error) setError(error.message);
     else setSuccess(true);
@@ -47,14 +40,14 @@ const ResetPassword = () => {
             <CheckCircle className="mx-auto h-12 w-12 text-accent" />
             <h2 className="font-display text-xl font-bold text-foreground">Password updated</h2>
             <p className="text-muted-foreground">Your password has been reset successfully.</p>
-            <Button onClick={() => navigate("/dashboard")} className="bg-gradient-cta text-primary-foreground">Go to Dashboard</Button>
+            <Button onClick={() => navigate("/login")} className="bg-gradient-cta text-primary-foreground">Go to Login</Button>
           </div>
         </div>
       </Layout>
     );
   }
 
-  if (!valid) {
+  if (!resetToken) {
     return (
       <Layout>
         <div className="min-h-[80vh] flex items-center justify-center px-4">

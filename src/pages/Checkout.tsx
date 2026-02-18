@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { getProductById } from "@/services/productService";
+import { createOrder, processPayment } from "@/services/orderService";
+import { activateEsim } from "@/services/esimService";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, CreditCard, CheckCircle, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
 import Layout from "@/components/Layout";
@@ -30,41 +31,21 @@ const Checkout = () => {
     if (!user || !product) return;
     setStep("processing");
     try {
-      // Create order in DB
-      const { data: order, error } = await supabase
-        .from("orders")
-        .insert({
-          user_id: user.id,
-          status: "pending",
-          items: JSON.stringify([{ product_id: product.id, quantity: 1 }]),
-          total: price,
-          currency: "USD",
-          payment_url: `https://amazonpay.sample.com/checkout/${Date.now()}`,
-        } as any)
-        .select()
-        .single();
+      // Create order via API
+      const order = await createOrder({
+        items: [{ product_id: product.id, quantity: 1 }],
+      });
 
-      if (error) throw error;
+      // Process payment via API
+      await processPayment(order.id);
 
-      // Simulate Amazon Pay redirect + success
-      await new Promise(r => setTimeout(r, 2000));
-
-      // Mark order as paid
-      await supabase.from("orders").update({ status: "completed", transaction_id: `TXN-${Date.now()}` } as any).eq("id", (order as any).id);
-
-      // Create purchased eSIM record
-      await supabase.from("purchased_esims").insert({
-        user_id: user.id,
-        order_id: (order as any).id,
+      // Activate eSIM via API
+      await activateEsim({
+        order_id: order.id,
         product_id: product.id,
-        esim_id: `ESIM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-        qr_code_url: "https://sample.com/qrcode.png",
-        smdp_address: "smdp.sample.com",
-        activation_code: `ACT-${Math.floor(1000 + Math.random() * 9000)}`,
-        status: "active",
-      } as any);
+      });
 
-      setOrderId((order as any).id);
+      setOrderId(order.id);
       setStep("success");
     } catch (err: any) {
       setErrorMsg(err.message || "Checkout failed");
@@ -100,7 +81,7 @@ const Checkout = () => {
               <div className="flex justify-between border-b border-border pb-3">
                 <div>
                   <p className="font-medium text-foreground">{product.name}</p>
-                  <p className="text-sm text-muted-foreground">{product.data} · {product.validity}</p>
+                  <p className="text-sm text-muted-foreground">{product.dataAmount} · {product.validity}</p>
                 </div>
                 <p className="font-bold text-foreground">${price.toFixed(2)}</p>
               </div>

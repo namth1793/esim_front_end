@@ -1,40 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useMyOrders, useMyEsims } from "@/hooks/useApi";
 import { Button } from "@/components/ui/button";
 import { User, Package, CreditCard, QrCode, LogOut, Loader2, Wifi } from "lucide-react";
 import Layout from "@/components/Layout";
+import { useState } from "react";
 
 const Dashboard = () => {
-  const { user, profile, role, signOut, loading: authLoading } = useAuth();
+  const { user, role, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [esims, setEsims] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: orders = [], isLoading: ordersLoading } = useMyOrders();
+  const { data: esims = [], isLoading: esimsLoading } = useMyEsims();
   const [tab, setTab] = useState<"profile" | "orders" | "esims">("profile");
 
   useEffect(() => {
-    if (!authLoading && !user) { navigate("/login"); return; }
-    if (user) fetchData();
+    if (!authLoading && !user) { navigate("/login"); }
   }, [user, authLoading, navigate]);
-
-  const fetchData = async () => {
-    const [ordersRes, esimsRes] = await Promise.all([
-      supabase.from("orders").select("*").order("created_at", { ascending: false }),
-      supabase.from("purchased_esims").select("*").order("created_at", { ascending: false }),
-    ]);
-    setOrders((ordersRes.data as any[]) || []);
-    setEsims((esimsRes.data as any[]) || []);
-    setLoading(false);
-  };
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
 
-  if (authLoading || loading) {
+  const loading = authLoading || ordersLoading || esimsLoading;
+
+  if (authLoading || !user) {
     return (
       <Layout>
         <div className="min-h-[60vh] flex items-center justify-center">
@@ -82,11 +73,11 @@ const Dashboard = () => {
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <p className="text-xs text-muted-foreground">Name</p>
-                <p className="font-medium text-foreground">{profile?.full_name || "—"}</p>
+                <p className="font-medium text-foreground">{user.name || "—"}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Email</p>
-                <p className="font-medium text-foreground">{profile?.email || user?.email}</p>
+                <p className="font-medium text-foreground">{user.email}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Role</p>
@@ -103,13 +94,15 @@ const Dashboard = () => {
         {/* Orders */}
         {tab === "orders" && (
           <div className="space-y-4">
-            {orders.length === 0 ? (
+            {ordersLoading ? (
+              <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+            ) : orders.length === 0 ? (
               <div className="text-center py-12 rounded-2xl border border-border bg-card shadow-card">
                 <Package className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
                 <p className="text-muted-foreground">No orders yet</p>
               </div>
             ) : (
-              orders.map((o: any) => (
+              orders.map((o) => (
                 <div key={o.id} className="rounded-xl border border-border bg-card p-4 shadow-sm flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-foreground">Order #{o.id.slice(0, 8)}</p>
@@ -130,13 +123,15 @@ const Dashboard = () => {
         {/* eSIMs */}
         {tab === "esims" && (
           <div className="space-y-4">
-            {esims.length === 0 ? (
+            {esimsLoading ? (
+              <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+            ) : esims.length === 0 ? (
               <div className="text-center py-12 rounded-2xl border border-border bg-card shadow-card">
                 <QrCode className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
                 <p className="text-muted-foreground">No eSIMs purchased yet</p>
               </div>
             ) : (
-              esims.map((e: any) => (
+              esims.map((e) => (
                 <div key={e.id} className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="font-medium text-foreground">{e.esim_id}</p>

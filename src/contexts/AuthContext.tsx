@@ -1,124 +1,104 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { User, Session } from "@supabase/supabase-js";
+import { getToken } from "@/services/api";
+import {
+  login as loginApi,
+  signup as signupApi,
+  logout as logoutApi,
+  forgotPassword as forgotPasswordApi,
+  resetPassword as resetPasswordApi,
+  getMe,
+  type User,
+} from "@/services/authService";
 
 export type AppRole = "customer" | "agent";
 
-interface Profile {
-  id: string;
-  full_name: string;
-  email: string;
-  avatar_url: string | null;
-}
-
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
-  profile: Profile | null;
   role: AppRole;
   loading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
-  updatePassword: (password: string) => Promise<{ error: Error | null }>;
+  updatePassword: (token: string, password: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole>("customer");
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    if (data) setProfile(data as Profile);
-  };
-
-  const fetchRole = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .single();
-    if (data) setRole((data as { role: AppRole }).role);
-  };
-
+  // On mount, check if we have a token and fetch user
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-            fetchRole(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-          setRole("customer");
-        }
-        setLoading(false);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchRole(session.user.id);
-      }
+    const token = getToken();
+    if (token) {
+      getMe()
+        .then((u) => {
+          setUser(u);
+          setRole(u.role);
+        })
+        .catch(() => {
+          // Token invalid/expired
+          setUser(null);
+        })
+        .finally(() => setLoading(false));
+    } else {
       setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    }
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    return { error: error as Error | null };
+    try {
+      const res = await signupApi(email, password, fullName);
+      setUser(res.user);
+      setRole(res.user.role);
+      return { error: null };
+    } catch (err: any) {
+      return { error: err as Error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+    try {
+      const res = await loginApi(email, password);
+      setUser(res.user);
+      setRole(res.user.role);
+      return { error: null };
+    } catch (err: any) {
+      return { error: err as Error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    await logoutApi();
+    setUser(null);
     setRole("customer");
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    return { error: error as Error | null };
+    try {
+      await forgotPasswordApi(email);
+      return { error: null };
+    } catch (err: any) {
+      return { error: err as Error };
+    }
   };
 
-  const updatePassword = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password });
-    return { error: error as Error | null };
+  const updatePassword = async (token: string, password: string) => {
+    try {
+      await resetPasswordApi(token, password);
+      return { error: null };
+    } catch (err: any) {
+      return { error: err as Error };
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, role, loading, signUp, signIn, signOut, resetPassword, updatePassword }}>
+    <AuthContext.Provider
+      value={{ user, role, loading, signUp, signIn, signOut, resetPassword, updatePassword }}
+    >
       {children}
     </AuthContext.Provider>
   );
