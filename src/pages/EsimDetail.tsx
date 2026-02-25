@@ -199,23 +199,30 @@ const ProductDetail = () => {
 
   // Extract variations from product data
   useEffect(() => {
-    if (product && product.attributes) {
+    if (!product) return;
+
+    // Prefer pre-processed variations from useProduct (each has its own WooCommerce price)
+    if (product.variations && product.variations.length > 0) {
+      const extractedVariations = product.variations.map((v: any) => ({
+        id: v.id,
+        name: v.name,
+        price: (v.price ?? v.display_price ?? '0').toString(),
+        dataAmount: v.dataAmount,
+        validity: v.validity,
+      }));
+      setVariations(extractedVariations);
+      setSelectedVariation(extractedVariations[0]);
+    } else if (product.attributes) {
+      // Fallback: simple product — build options from Plan attribute
       const planAttribute = product.attributes.find((attr: any) => attr.name === 'Plan');
       if (planAttribute && planAttribute.options) {
-        const extractedVariations = planAttribute.options.map((option: string, index: number) => {
-          // Parse data amount and validity from option string (e.g., "South Africa 100MB 7Days")
-          const parts = option.split(' ');
-          const dataAmount = parts.slice(-2, -1)[0] || 'N/A';
-          const validity = parts.slice(-1)[0] || 'N/A';
-          
-          return {
-            id: product.variations?.[index] || index,
-            name: option,
-            price: product.price || '0',
-            dataAmount,
-            validity
-          };
-        });
+        const extractedVariations = planAttribute.options.map((option: string, index: number) => ({
+          id: index,
+          name: option,
+          price: (product.price ?? '0').toString(),
+          dataAmount: 'N/A',
+          validity: 'N/A',
+        }));
         setVariations(extractedVariations);
         if (extractedVariations.length > 0) {
           setSelectedVariation(extractedVariations[0]);

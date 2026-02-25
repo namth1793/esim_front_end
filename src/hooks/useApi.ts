@@ -182,9 +182,14 @@ const transformWooCommerceProduct = (product: any): EsimProduct => {
   
   const image = sanitizeImageUrl(images.length > 0 ? images[0].src : null);
   
-  const price = safeParsePrice(product.price || product.regular_price);
+  // WooCommerce: price = current/sale price, regular_price = before discount
+  // For variable products, price = minimum variation price
+  const price = safeParsePrice(product.price !== '' ? product.price : product.regular_price);
   const regularPrice = safeParsePrice(product.regular_price);
-  const originalPrice = product.sale_price ? regularPrice : undefined;
+  const originalPrice =
+    product.sale_price && product.sale_price !== '' && regularPrice > price
+      ? regularPrice
+      : undefined;
 
   // XỬ LÝ CATEGORIES - Lấy đúng từ field categories của API
   const categoryNames = categories.map((cat: any) => cat.name);
@@ -207,7 +212,7 @@ const transformWooCommerceProduct = (product: any): EsimProduct => {
     region: mappedRegion, // Region được map từ categories
     dataAmount,
     validity,
-    price: price || 9.99,
+    price,
     originalPrice: originalPrice && originalPrice > price ? originalPrice : undefined,
     coverage: coverage.length > 0 ? coverage : [country],
     image,

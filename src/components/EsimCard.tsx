@@ -161,13 +161,19 @@ const EsimCard = ({ esim, index }: EsimCardProps) => {
           <div className="flex items-center justify-between border-t border-border pt-3">
             <div className="flex items-center gap-1">
               <DollarSign className="h-4 w-4 text-primary" />
-              <span className="font-display text-lg font-bold text-foreground">
-                ${safeEsim.price.toFixed(2)}
-              </span>
-              {safeEsim.originalPrice && safeEsim.originalPrice > safeEsim.price && (
-                <span className="text-sm text-muted-foreground line-through">
-                  ${safeEsim.originalPrice.toFixed(2)}
-                </span>
+              {safeEsim.price > 0 ? (
+                <>
+                  <span className="font-display text-lg font-bold text-foreground">
+                    ${safeEsim.price.toFixed(2)}
+                  </span>
+                  {safeEsim.originalPrice && safeEsim.originalPrice > safeEsim.price && (
+                    <span className="text-sm text-muted-foreground line-through">
+                      ${safeEsim.originalPrice.toFixed(2)}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="font-display text-sm font-semibold text-primary">See plans</span>
               )}
             </div>
             <span className="text-xs font-medium text-primary hover:underline">View details →</span>
