@@ -310,7 +310,7 @@ const Cart = () => {
                 {/* Security Note */}
                 <div className="mt-4 text-center">
                   <p className="text-xs text-muted-foreground">
-                    Secure checkout powered by Amazon Pay
+                    Secure checkout · Orders linked to WooCommerce
                   </p>
                 </div>
               </div>

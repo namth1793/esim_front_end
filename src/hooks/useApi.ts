@@ -1039,6 +1039,51 @@ const getMockMyOrders = () => [
 ];
 
 // =====================================================
+// createOrder - Tạo đơn hàng mới trên WooCommerce
+// =====================================================
+export const createOrder = async (
+  token: string,
+  orderPayload: {
+    billing: {
+      first_name: string;
+      last_name: string;
+      email: string;
+      phone: string;
+    };
+    line_items: Array<{
+      product_id: number;
+      variation_id?: number;
+      quantity: number;
+    }>;
+    payment_method: string;
+    payment_method_title: string;
+    set_paid: boolean;
+  }
+): Promise<{ success: boolean; data?: any; error?: string }> => {
+  try {
+    const response = await fetch(`${API_URL}/wp-json/wc/v3/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(orderPayload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, error: data.error || data.message || 'Failed to create order' };
+    }
+
+    // Backend returns { success: true, data: wooOrder }
+    return { success: true, data: data.success ? data.data : data };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Network error' };
+  }
+};
+
+// =====================================================
 // ESIM PROVISIONING APIs
 // =====================================================
 
