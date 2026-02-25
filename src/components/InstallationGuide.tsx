@@ -1,144 +1,96 @@
-import { QrCode, FileText, Settings, Power } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Android, Apple } from "lucide-react";
+import { useState } from "react";
 
-const installOptions = [
-  {
-    icon: QrCode,
-    title: "Install by QR Code",
-    description: "Scan to install instantly",
-    content: (
-      <div className="space-y-4">
-        <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted">
-          <p className="text-sm text-muted-foreground text-center px-4">
-            QR code will appear here after purchase
-          </p>
-        </div>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="font-medium text-foreground">Steps:</p>
-          <ol className="list-decimal list-inside space-y-1">
-            <li>Go to Settings → Cellular/Mobile Data</li>
-            <li>Tap "Add eSIM" or "Add Cellular Plan"</li>
-            <li>Select "Use QR Code"</li>
-            <li>Scan the QR code above</li>
-            <li>Confirm and activate the plan</li>
-          </ol>
-        </div>
-      </div>
-    ),
-  },
-  {
-    icon: FileText,
-    title: "Download PDF Guide",
-    description: "Step-by-step instructions",
-    content: (
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Download a detailed installation guide for your device.
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <button className="rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted">
-            <p className="font-medium text-foreground">📱 iOS Guide</p>
-            <p className="text-xs text-muted-foreground">iPhone XS and later</p>
-          </button>
-          <button className="rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted">
-            <p className="font-medium text-foreground">🤖 Android Guide</p>
-            <p className="text-xs text-muted-foreground">Pixel 3 and later, Samsung S20+</p>
-          </button>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          PDF will be available after purchase.
-        </p>
-      </div>
-    ),
-  },
-  {
-    icon: Settings,
-    title: "Manual Installation",
-    description: "Enter details manually",
-    content: (
-      <div className="space-y-4">
-        <div className="space-y-3">
-          <div className="rounded-lg bg-muted p-3">
-            <p className="text-xs font-medium text-muted-foreground mb-1">SM-DP+ Address</p>
-            <p className="font-mono text-sm text-foreground">Available after purchase</p>
-          </div>
-          <div className="rounded-lg bg-muted p-3">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Activation Code</p>
-            <p className="font-mono text-sm text-foreground">Available after purchase</p>
-          </div>
-        </div>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="font-medium text-foreground">Manual Steps:</p>
-          <ol className="list-decimal list-inside space-y-1">
-            <li>Go to Settings → Cellular/Mobile Data</li>
-            <li>Tap "Add eSIM" → "Enter Details Manually"</li>
-            <li>Enter the SM-DP+ address and activation code</li>
-            <li>Confirm and activate</li>
-          </ol>
-        </div>
-      </div>
-    ),
-  },
-  {
-    icon: Power,
-    title: "Activate Your eSIM",
-    description: "Enable upon arrival",
-    content: (
-      <div className="space-y-4 text-sm text-muted-foreground">
-        <p className="font-medium text-foreground">After arriving at your destination:</p>
-        <ol className="list-decimal list-inside space-y-2">
-          <li>Go to Settings → Cellular/Mobile Data</li>
-          <li>Enable the eSIM data plan you installed</li>
-          <li>Turn off your primary line's data roaming (to avoid charges)</li>
-          <li>Set the eSIM as the default line for data</li>
-          <li>Enable Data Roaming for the eSIM if prompted</li>
-        </ol>
-        <div className="rounded-lg border border-border bg-muted/50 p-3">
-          <p className="font-medium text-foreground mb-1">💡 Tip</p>
-          <p>Install the eSIM before you travel, then simply activate it when you land. This ensures seamless connectivity.</p>
-        </div>
-      </div>
-    ),
-  },
-];
+interface InstallationGuideProps {
+  iccid: string;
+  qrCode: string;
+}
 
-const InstallationGuide = () => {
+const InstallationGuide = ({ iccid, qrCode }: InstallationGuideProps) => {
+  const [device, setDevice] = useState<'ios' | 'android'>('ios');
+
   return (
-    <div>
-      <h3 className="mb-4 font-display text-lg font-semibold text-foreground">
-        eSIM Installation Guide
-      </h3>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {installOptions.map((option) => (
-          <Dialog key={option.title}>
-            <DialogTrigger asChild>
-              <button className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:shadow-card hover:border-primary/30">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <option.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium text-card-foreground text-sm">{option.title}</p>
-                  <p className="text-xs text-muted-foreground">{option.description}</p>
-                </div>
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="font-display flex items-center gap-2">
-                  <option.icon className="h-5 w-5 text-primary" />
-                  {option.title}
-                </DialogTitle>
-              </DialogHeader>
-              {option.content}
-            </DialogContent>
-          </Dialog>
-        ))}
+    <div className="space-y-6">
+      {/* Device selector */}
+      <div className="flex gap-2 p-1 bg-secondary/30 rounded-lg">
+        <button
+          onClick={() => setDevice('ios')}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-colors ${
+            device === 'ios' ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'
+          }`}
+        >
+          <Apple className="h-4 w-4" />
+          iOS
+        </button>
+        <button
+          onClick={() => setDevice('android')}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-colors ${
+            device === 'android' ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'
+          }`}
+        >
+          <Android className="h-4 w-4" />
+          Android
+        </button>
+      </div>
+
+      {/* QR Code */}
+      <div className="flex justify-center">
+        <div className="p-4 bg-white rounded-xl">
+          <img src={qrCode} alt="eSIM QR" className="w-40 h-40" />
+        </div>
+      </div>
+
+      {/* Instructions */}
+      {device === 'ios' ? (
+        <div className="space-y-4">
+          <h3 className="font-medium">📱 Install on iOS</h3>
+          <ol className="space-y-3 text-sm text-muted-foreground">
+            <li className="flex gap-2">
+              <span className="font-bold text-primary">1.</span>
+              <span>Go to <strong>Settings</strong> → <strong>Cellular</strong> → <strong>Add Cellular Plan</strong></span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-primary">2.</span>
+              <span>Scan the QR code above or enter details manually</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-primary">3.</span>
+              <span>Label your plan (e.g., "Travel eSIM") and tap <strong>Continue</strong></span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-primary">4.</span>
+              <span>Wait for activation (usually 1-2 minutes)</span>
+            </li>
+          </ol>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <h3 className="font-medium">🤖 Install on Android</h3>
+          <ol className="space-y-3 text-sm text-muted-foreground">
+            <li className="flex gap-2">
+              <span className="font-bold text-primary">1.</span>
+              <span>Go to <strong>Settings</strong> → <strong>Network & Internet</strong> → <strong>Mobile Network</strong></span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-primary">2.</span>
+              <span>Tap <strong>Add eSIM</strong> or <strong>Download eSIM</strong></span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-primary">3.</span>
+              <span>Scan QR code or enter activation code</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-primary">4.</span>
+              <span>Follow prompts to complete installation</span>
+            </li>
+          </ol>
+        </div>
+      )}
+
+      {/* ICCID */}
+      <div className="mt-6 p-4 bg-secondary/20 rounded-lg">
+        <p className="text-xs text-muted-foreground mb-1">ICCID (for support)</p>
+        <p className="font-mono text-sm">{iccid}</p>
       </div>
     </div>
   );

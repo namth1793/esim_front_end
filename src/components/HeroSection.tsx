@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
-import { ArrowRight, Globe, Shield, Zap } from "lucide-react";
+import heroBg from "@/assets/hero-bg.jpg";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import heroBg from "@/assets/hero-bg.jpg";
+import { ArrowRight, Globe, Shield, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
@@ -18,7 +18,7 @@ const HeroSection = () => {
         <div className="absolute inset-0 bg-gradient-hero opacity-85" />
       </div>
 
-      <div className="container relative z-10 py-20 md:py-32">
+      <div className="container relative z-10 py-20 md:py-20">
         <div className="mx-auto max-w-3xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -58,7 +58,7 @@ const HeroSection = () => {
             <Button
               size="lg"
               variant="outline"
-              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 backdrop-blur-sm"
+              className="border-primary-foreground/30 text-primary hover:bg-primary-foreground/10 backdrop-blur-sm"
               onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
             >
               How It Works

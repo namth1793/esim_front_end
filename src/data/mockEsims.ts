@@ -241,5 +241,5 @@ export const mockEsims: EsimPackage[] = [
   },
 ];
 
-export const regions = ["All", "Europe", "Asia", "North America", "South America", "Oceania"];
-export const dataFilters = ["All", "1 GB", "3 GB", "5 GB", "10 GB"];
+export const regions = ["All", "Asia", "Europe", "North America", "South America", "Africa", "Oceania", "Global"];
+export const dataFilters = ["All", "1GB", "3GB", "5GB", "10GB", "20GB", "30GB", "50GB"];

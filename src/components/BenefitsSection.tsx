@@ -1,5 +1,5 @@
-import { Smartphone, Zap, Globe, CreditCard } from "lucide-react";
 import { motion } from "framer-motion";
+import { CreditCard, Globe, Smartphone, Zap } from "lucide-react";
 
 const benefits = [
   {
@@ -26,11 +26,11 @@ const benefits = [
 
 const BenefitsSection = () => {
   return (
-    <section className="py-16 md:py-24 bg-background">
+    <section className="py-16 md:py-20 bg-background">
       <div className="container">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="mb-4 font-display text-3xl font-bold text-foreground md:text-4xl">
-            Why Choose <span className="text-primary">GlobeSIM</span>?
+            Why Choose <span className="text-primary">STOAHUB</span>?
           </h2>
           <p className="text-muted-foreground">
             The simplest way to stay connected while traveling abroad.

@@ -1,10 +1,10 @@
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const CtaSection = () => {
   return (
-    <section className="py-16 md:py-24">
+    <section className="py-16 md:py-14">
       <div className="container">
         <div className="rounded-2xl bg-gradient-ocean p-10 text-center md:p-16">
           <h2 className="mb-4 font-display text-3xl font-bold text-primary-foreground md:text-4xl">

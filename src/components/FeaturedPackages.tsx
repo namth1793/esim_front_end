@@ -1,15 +1,15 @@
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import EsimCard from "./EsimCard";
 import { useFeaturedProducts } from "@/hooks/useApi";
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import EsimCard from "./EsimCard";
 
 const FeaturedPackages = () => {
   const { data: featured = [], isLoading } = useFeaturedProducts();
   const displayed = featured.slice(0, 4);
 
   return (
-    <section className="py-16 md:py-24 bg-muted/50">
+    <section className="py-16 md:py-20 bg-muted/50">
       <div className="container">
         <div className="mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
           <div>

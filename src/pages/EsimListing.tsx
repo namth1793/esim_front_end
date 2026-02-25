@@ -1,28 +1,79 @@
-import { useState, useMemo } from "react";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import Layout from "@/components/Layout";
 import EsimCard from "@/components/EsimCard";
-import { regions, dataFilters } from "@/data/mockEsims";
+import Layout from "@/components/Layout";
+import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { useProducts } from "@/hooks/useApi";
 import { motion } from "framer-motion";
+import { Search } from "lucide-react";
+import { useMemo, useState } from "react";
+
+// Region filters - chỉ 3 loại
+const regionFilters = ["All", "Local", "Regional", "Global"];
 
 const EsimListing = () => {
   const [search, setSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState("All");
-  const [dataFilter, setDataFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  
   const { data: products = [], isLoading } = useProducts();
 
   const filtered = useMemo(() => {
     return products.filter((e) => {
       const matchesSearch =
-        e.country.toLowerCase().includes(search.toLowerCase()) ||
-        e.name.toLowerCase().includes(search.toLowerCase());
-      const matchesRegion = regionFilter === "All" || e.region === regionFilter;
-      const matchesData = dataFilter === "All" || e.dataAmount === dataFilter;
-      return matchesSearch && matchesRegion && matchesData;
+        e.country?.toLowerCase().includes(search.toLowerCase()) ||
+        e.name?.toLowerCase().includes(search.toLowerCase());
+      
+      // Xử lý region filter
+      let matchesRegion = regionFilter === "All";
+      
+      if (!matchesRegion) {
+        if (regionFilter === "Local") {
+          // Local: single country, not regional/global
+          matchesRegion = e.region === "Local" || 
+                         (e.country && e.country !== "Multiple Countries" && e.region !== "Regional" && e.region !== "Global");
+        } else if (regionFilter === "Regional") {
+          // Regional: multi-country within a region
+          matchesRegion = e.region === "Regional" || 
+                         (e.coverage?.length > 1 && e.region !== "Global") ||
+                         e.name?.toLowerCase().includes("europe") ||
+                         e.name?.toLowerCase().includes("asia") ||
+                         e.name?.toLowerCase().includes("america");
+        } else if (regionFilter === "Global") {
+          // Global: worldwide coverage
+          matchesRegion = e.region === "Global" || 
+                         e.coverage?.includes("Worldwide") ||
+                         e.name?.toLowerCase().includes("global");
+        }
+      } else {
+        matchesRegion = true;
+      }
+      
+      return matchesSearch && matchesRegion;
     });
-  }, [search, regionFilter, dataFilter]);
+  }, [search, regionFilter, products]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filtered.slice(startIndex, endIndex);
+  }, [filtered, currentPage, itemsPerPage]);
+
+  // Reset to first page when filters change
+  const handleFilterChange = (newRegion: string, newSearch: string) => {
+    setRegionFilter(newRegion);
+    setSearch(newSearch);
+    setCurrentPage(1);
+  };
 
   return (
     <Layout>
@@ -44,8 +95,8 @@ const EsimListing = () => {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by country..."
+                onChange={(e) => handleFilterChange(regionFilter, e.target.value)}
+                placeholder="Search by country or plan name..."
                 className="bg-primary-foreground/95 pl-10 border-0 text-foreground placeholder:text-muted-foreground"
               />
             </div>
@@ -53,52 +104,38 @@ const EsimListing = () => {
         </div>
       </section>
 
-      <section className="py-8 md:py-12">
+      <section className="py-8 md:py-8">
         <div className="container">
-          {/* Filters */}
-          <div className="mb-8 space-y-4">
-            <div>
-              <p className="mb-2 text-sm font-medium text-muted-foreground">Region</p>
-              <div className="flex flex-wrap gap-2">
-                {regions.map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setRegionFilter(r)}
-                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                      regionFilter === r
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="mb-2 text-sm font-medium text-muted-foreground">Data</p>
-              <div className="flex flex-wrap gap-2">
-                {dataFilters.map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setDataFilter(d)}
-                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                      dataFilter === d
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                    }`}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
+          {/* Region Filters - ĐƯA VÀO GIỮA MÀN HÌNH */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex flex-wrap gap-2 p-1 bg-secondary/30 rounded-full">
+              {regionFilters.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => handleFilterChange(r, search)}
+                  className={`px-6 py-2 text-sm font-medium rounded-full transition-all ${
+                    regionFilter === r
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "text-secondary-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Results */}
-          <p className="mb-4 text-sm text-muted-foreground">
-            {filtered.length} plan{filtered.length !== 1 ? "s" : ""} found
-          </p>
+          {/* Results count */}
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-sm text-muted-foreground">
+              {filtered.length} plan{filtered.length !== 1 ? "s" : ""} found
+            </p>
+            {!isLoading && filtered.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length}
+              </p>
+            )}
+          </div>
 
           {isLoading ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -111,11 +148,61 @@ const EsimListing = () => {
               No plans found. Try adjusting your filters.
             </div>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filtered.map((esim, i) => (
-                <EsimCard key={esim.id} esim={esim} index={i} />
-              ))}
-            </div>
+            <>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {paginatedProducts.map((esim, i) => (
+                  <EsimCard key={esim.id} esim={esim} index={i} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-primary/10"}
+                        />
+                      </PaginationItem>
+                      
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationLink
+                              onClick={() => setCurrentPage(pageNum)}
+                              isActive={currentPage === pageNum}
+                              className="cursor-pointer"
+                            >
+                              {pageNum}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+                      
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-primary/10"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

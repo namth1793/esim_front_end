@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, CreditCard, QrCode, Wifi } from "lucide-react";
+import { CreditCard, QrCode, Search, Wifi } from "lucide-react";
 
 const steps = [
   {
@@ -30,7 +30,7 @@ const steps = [
 
 const HowItWorksSection = () => {
   return (
-    <section id="how-it-works" className="py-16 md:py-24 bg-muted/50">
+    <section id="how-it-works" className="py-16 md:py-20 bg-muted/50">
       <div className="container">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="mb-4 font-display text-3xl font-bold text-foreground md:text-4xl">
