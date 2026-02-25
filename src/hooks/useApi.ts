@@ -3,10 +3,12 @@ import { useEffect, useState } from 'react';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
-// Replace localhost image URLs with placeholder (WooCommerce stores absolute URLs)
+// Replace localhost image URLs — swap with production WordPress URL if available
+const WP_URL = import.meta.env.VITE_WORDPRESS_URL || '';
 const sanitizeImageUrl = (url: string | undefined | null): string => {
   if (!url) return 'https://placehold.co/400x300?text=eSIM';
   if (url.includes('localhost') || url.includes('127.0.0.1')) {
+    if (WP_URL) return url.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, WP_URL);
     return 'https://placehold.co/400x300?text=eSIM';
   }
   return url;
