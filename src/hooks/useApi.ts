@@ -3,6 +3,15 @@ import { useEffect, useState } from 'react';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
+// Replace localhost image URLs with placeholder (WooCommerce stores absolute URLs)
+const sanitizeImageUrl = (url: string | undefined | null): string => {
+  if (!url) return 'https://placehold.co/400x300?text=eSIM';
+  if (url.includes('localhost') || url.includes('127.0.0.1')) {
+    return 'https://placehold.co/400x300?text=eSIM';
+  }
+  return url;
+};
+
 interface WooCommerceProduct {
   id: number;
   name: string;
@@ -169,9 +178,7 @@ const transformWooCommerceProduct = (product: any): EsimProduct => {
   const validity = extractValidityFromProduct(name, attributes);
   const coverage = extractCoverage(categories);
   
-  const image = images.length > 0 && images[0].src 
-    ? images[0].src 
-    : 'https://placehold.co/400x300?text=eSIM';
+  const image = sanitizeImageUrl(images.length > 0 ? images[0].src : null);
   
   const price = safeParsePrice(product.price || product.regular_price);
   const regularPrice = safeParsePrice(product.regular_price);
@@ -472,7 +479,7 @@ const transformProductDetail = (product: any, variations: any[] = []) => {
     attributes: v.attributes || [],
     sku: v.sku || '',
     stock_status: v.stock_status || 'instock',
-    image: v.image?.src || product.images?.[0]?.src || null
+    image: sanitizeImageUrl(v.image?.src || product.images?.[0]?.src)
   }));
 
   // Xử lý attributes
@@ -484,9 +491,9 @@ const transformProductDetail = (product: any, variations: any[] = []) => {
   })) || [];
 
   // Lấy image chính
-  const mainImage = product.images && product.images.length > 0 
-    ? product.images[0].src 
-    : null;
+  const mainImage = sanitizeImageUrl(
+    product.images && product.images.length > 0 ? product.images[0].src : null
+  );
 
   // Xử lý categories
   const categories = product.categories?.map((cat: any) => cat.name) || [];
@@ -509,9 +516,9 @@ const transformProductDetail = (product: any, variations: any[] = []) => {
     // Images
     images: product.images?.map((img: any) => ({
       id: img.id,
-      src: img.src,
+      src: sanitizeImageUrl(img.src),
       alt: img.alt || '',
-      thumbnail: img.thumbnail || img.src
+      thumbnail: sanitizeImageUrl(img.thumbnail || img.src)
     })) || [],
     image: mainImage,
     
