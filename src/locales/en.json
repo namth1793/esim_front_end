@@ -1,0 +1,63 @@
+{
+  "header": {
+    "cart": "Cart",
+    "dashboard": "Dashboard",
+    "login": "Log In",
+    "browse": "Browse eSIMs",
+    "signIn": "Sign In"
+  },
+  "hero": {
+    "title": "Stay Connected",
+    "subtitle": "Anywhere in the World",
+    "description": "Instant eSIM activation for 190+ countries. No physical SIM, no roaming fees.",
+    "cta": "Browse eSIMs",
+    "learnMore": "Learn More"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "notFound": "Not Found",
+    "backHome": "Back to Home",
+    "addToCart": "Add to Cart",
+    "buyNow": "Buy Now",
+    "price": "Price",
+    "validity": "Validity",
+    "data": "Data",
+    "country": "Country",
+    "region": "Region",
+    "viewDetails": "View Details",
+    "days": "days",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "auth": {
+    "login": "Log In",
+    "signup": "Sign Up",
+    "logout": "Log Out",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "phone": "Phone Number",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "cart": {
+    "title": "Your Cart",
+    "empty": "Your cart is empty",
+    "total": "Total",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "quantity": "Quantity"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "myEsims": "My eSIMs",
+    "myOrders": "My Orders",
+    "profile": "Profile",
+    "active": "Active",
+    "expired": "Expired",
+    "pending": "Pending"
+  }
+}

@@ -11,7 +11,9 @@ import {
   X
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
+import LanguageToggle from "./LanguageToggle";
 import ThemeToggle from "./ThemeToggle";
 
 const Header = () => {
@@ -19,8 +21,8 @@ const Header = () => {
   const [cartCount, setCartCount] = useState(0);
   const location = useLocation();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
-  // Update cart count whenever cart changes or user logs in
   useEffect(() => {
     if (user) {
       const updateCartCount = () => {
@@ -35,8 +37,6 @@ const Header = () => {
       };
 
       updateCartCount();
-
-      // Listen for cart updates
       window.addEventListener('storage', updateCartCount);
       window.addEventListener('cartUpdated', updateCartCount);
 
@@ -51,12 +51,10 @@ const Header = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Custom event to trigger cart update when adding items
   const dispatchCartUpdate = () => {
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
-  // Expose function globally for components to call
   useEffect(() => {
     (window as any).updateCartCount = dispatchCartUpdate;
   }, []);
@@ -79,10 +77,10 @@ const Header = () => {
           </div>
         </Link>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-1 md:flex">
+          <LanguageToggle />
           <ThemeToggle />
-          
-          {/* Cart Icon - Only shown when logged in */}
+
           {user && (
             <Button variant="ghost" size="sm" className="relative" asChild>
               <Link to="/cart">
@@ -100,20 +98,19 @@ const Header = () => {
             <Button variant="ghost" size="sm" className="bg-gradient-cta text-primary-foreground hover:opacity-90" asChild>
               <Link to="/dashboard">
                 <LayoutDashboard className="h-4 w-4" />
-                Dashboard
+                {t('header.dashboard')}
               </Link>
             </Button>
           ) : (
             <Button variant="ghost" size="sm" className="bg-gradient-cta text-primary-foreground hover:opacity-90" asChild>
               <Link to="/login">
                 <User className="h-4 w-4" />
-                Log In
+                {t('header.login')}
               </Link>
             </Button>
           )}
         </div>
 
-        {/* Mobile toggle */}
         <button
           className="md:hidden text-foreground"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -122,7 +119,6 @@ const Header = () => {
         </button>
       </div>
 
-      {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -133,7 +129,6 @@ const Header = () => {
             className="overflow-hidden border-t border-border/50 md:hidden"
           >
             <nav className="container flex flex-col gap-2 py-4">
-              {/* Mobile Cart Link - Only when logged in */}
               {user && (
                 <Link
                   to="/cart"
@@ -146,7 +141,7 @@ const Header = () => {
                 >
                   <div className="flex items-center gap-2">
                     <ShoppingCart className="h-4 w-4" />
-                    <span>Cart</span>
+                    <span>{t('header.cart')}</span>
                   </div>
                   {cartCount > 0 && (
                     <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
@@ -156,19 +151,24 @@ const Header = () => {
                 </Link>
               )}
 
+              <div className="flex items-center justify-between px-4 py-2">
+                <LanguageToggle />
+                <ThemeToggle />
+              </div>
+
               <div className="mt-2 flex flex-col gap-2">
                 {user ? (
                   <>
                     <Button variant="outline" size="sm" asChild>
                       <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
                         <LayoutDashboard className="mr-2 h-4 w-4" />
-                        Dashboard
+                        {t('header.dashboard')}
                       </Link>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
                       <Link to="/cart" onClick={() => setMobileOpen(false)}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
-                        Cart
+                        {t('header.cart')}
                         {cartCount > 0 && ` (${cartCount})`}
                       </Link>
                     </Button>
@@ -177,13 +177,13 @@ const Header = () => {
                   <Button variant="outline" size="sm" asChild>
                     <Link to="/login" onClick={() => setMobileOpen(false)}>
                       <User className="mr-2 h-4 w-4" />
-                      Sign In
+                      {t('header.signIn')}
                     </Link>
                   </Button>
                 )}
                 <Button size="sm" className="bg-gradient-cta text-primary-foreground" asChild>
                   <Link to="/esims" onClick={() => setMobileOpen(false)}>
-                    Browse eSIMs
+                    {t('header.browse')}
                   </Link>
                 </Button>
               </div>

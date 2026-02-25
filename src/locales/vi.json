@@ -1,0 +1,63 @@
+{
+  "header": {
+    "cart": "Giỏ hàng",
+    "dashboard": "Tổng quan",
+    "login": "Đăng nhập",
+    "browse": "Xem eSIM",
+    "signIn": "Đăng nhập"
+  },
+  "hero": {
+    "title": "Luôn Kết Nối",
+    "subtitle": "Khắp Nơi Trên Thế Giới",
+    "description": "Kích hoạt eSIM tức thì cho 190+ quốc gia. Không cần SIM vật lý, không phí roaming.",
+    "cta": "Xem eSIM",
+    "learnMore": "Tìm hiểu thêm"
+  },
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Đã xảy ra lỗi",
+    "notFound": "Không tìm thấy",
+    "backHome": "Về trang chủ",
+    "addToCart": "Thêm vào giỏ",
+    "buyNow": "Mua ngay",
+    "price": "Giá",
+    "validity": "Thời hạn",
+    "data": "Dung lượng",
+    "country": "Quốc gia",
+    "region": "Khu vực",
+    "viewDetails": "Xem chi tiết",
+    "days": "ngày",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "signup": "Đăng ký",
+    "logout": "Đăng xuất",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "fullName": "Họ và tên",
+    "phone": "Số điện thoại",
+    "forgotPassword": "Quên mật khẩu?",
+    "noAccount": "Chưa có tài khoản?",
+    "hasAccount": "Đã có tài khoản?"
+  },
+  "cart": {
+    "title": "Giỏ hàng",
+    "empty": "Giỏ hàng trống",
+    "total": "Tổng cộng",
+    "checkout": "Thanh toán",
+    "remove": "Xóa",
+    "quantity": "Số lượng"
+  },
+  "dashboard": {
+    "title": "Tổng quan",
+    "myEsims": "eSIM của tôi",
+    "myOrders": "Đơn hàng",
+    "profile": "Hồ sơ",
+    "active": "Đang hoạt động",
+    "expired": "Hết hạn",
+    "pending": "Chờ xử lý"
+  }
+}
