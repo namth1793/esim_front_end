@@ -23,9 +23,10 @@ interface EsimCardProps {
     }>;
   };
   index: number;
+  linkState?: any; // optional React Router state passed on navigation
 }
 
-const EsimCard = ({ esim, index }: EsimCardProps) => {
+const EsimCard = ({ esim, index, linkState }: EsimCardProps) => {
   // Helper function để format price an toàn
   const formatPrice = (price: number | string | undefined): number => {
     if (price === undefined || price === null) return 0;
@@ -98,7 +99,7 @@ const EsimCard = ({ esim, index }: EsimCardProps) => {
       transition={{ delay: index * 0.1 }}
       className="group rounded-xl border border-border bg-card p-4 shadow-card transition-all hover:shadow-lg"
     >
-      <Link to={`/product/${safeEsim.id}`}>
+      <Link to={`/product/${safeEsim.id}`} state={linkState}>
         <div className="relative mb-4 overflow-hidden rounded-lg bg-muted">
           <img
             src={safeEsim.image}

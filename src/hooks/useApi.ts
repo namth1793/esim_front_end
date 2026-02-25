@@ -736,6 +736,63 @@ export const useFeaturedProducts = (limit: number = 4) => {
 };
 
 // =====================================================
+// EsimAccessPackage - type cho package từ eSIM Access API
+// =====================================================
+export interface EsimAccessPackage {
+  packageCode: string;
+  name: string;
+  price: number;        // USD (already divided by 10000)
+  retailPrice: number;  // Suggested retail price
+  currencyCode: string;
+  dataAmount: string;   // e.g. "1GB", "500MB"
+  dataBytes: number;
+  duration: number;
+  durationUnit: string; // "day", "month"
+  location: string;     // e.g. "VN,TH,JP"
+  slug: string;
+  type: string;         // "BASE" | "TOPUP"
+}
+
+// =====================================================
+// useEsimPackages - Lấy danh sách gói từ eSIM Access API (public, giá thực)
+// =====================================================
+export const useEsimPackages = (filters?: { locationCode?: string; slug?: string }) => {
+  const [data, setData] = useState<EsimAccessPackage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        setIsLoading(true);
+
+        const params = new URLSearchParams({ type: 'BASE' });
+        if (filters?.locationCode) params.set('locationCode', filters.locationCode);
+        if (filters?.slug) params.set('slug', filters.slug);
+
+        const response = await fetch(`${API_URL}/esim/packages/public?${params.toString()}`);
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const result = await response.json();
+        setData(result.data || []);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error fetching eSIM Access packages:', err);
+        setError(err.message || 'Failed to fetch packages');
+        setData([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPackages();
+  }, [filters?.locationCode, filters?.slug]);
+
+  return { data, isLoading, error };
+};
+
+// =====================================================
 // useMyEsims - Lấy danh sách eSIM đã mua của user
 // =====================================================
 export const useMyEsims = () => {

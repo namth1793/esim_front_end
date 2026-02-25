@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProduct } from "@/hooks/useApi";
+import { EsimAccessPackage, useProduct } from "@/hooks/useApi";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -34,6 +34,18 @@ interface Variation {
   validity?: string;
 }
 
+interface CartItem {
+  id: string;
+  productId: string;
+  variationId?: number;
+  name: string;
+  quantity: number;
+  price: number;
+  image?: string;
+  dataAmount?: string;
+  validity?: string;
+}
+
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -42,10 +54,15 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedVariation, setSelectedVariation] = useState<Variation | null>(null);
   const [variations, setVariations] = useState<Variation[]>([]);
-  const { data: product, isLoading, error } = useProduct(id || '');
+
+  // eSIM Access package passed via router state from EsimListing
+  const esimPackage = location.state?.esimPackage as EsimAccessPackage | undefined;
+
+  // Skip WooCommerce fetch when we have eSIM Access package data directly
+  const { data: product, isLoading, error } = useProduct(esimPackage ? '' : (id || ''));
 
   // Check authentication
-  const requireAuth = (action: 'buy' | 'cart') => {
+  const requireAuth = () => {
     if (!user) {
       toast.error('Please login first', {
         description: 'You need to be logged in to continue',
@@ -61,20 +78,27 @@ const ProductDetail = () => {
 
   // Handle Buy Now - Redirect to checkout
   const handleBuyNow = () => {
-    if (!requireAuth('buy')) return;
-    
+    if (!requireAuth()) return;
+
+    const productName = esimPackage?.name || selectedVariation?.name || product?.name || 'eSIM';
+    const productImage = esimPackage ? undefined : product?.images?.[0]?.src;
+    const dataAmount = esimPackage?.dataAmount || selectedVariation?.dataAmount;
+    const validity = esimPackage
+      ? `${esimPackage.duration} ${esimPackage.durationUnit}(s)`
+      : selectedVariation?.validity;
+
     // Create order data với đầy đủ thông tin
     const orderData = {
       id: `${id}-${selectedVariation?.id || 'default'}-${Date.now()}`,
       productId: id,
       variationId: selectedVariation?.id,
-      name: selectedVariation?.name || product?.name || 'eSIM',
+      name: productName,
       quantity: quantity,
       price: currentPrice,
       total: currentPrice * quantity,
-      image: product?.images?.[0]?.src,
-      dataAmount: selectedVariation?.dataAmount,
-      validity: selectedVariation?.validity
+      image: productImage,
+      dataAmount,
+      validity,
     };
 
     console.log('Saving to checkout_order:', orderData); // Debug log
@@ -99,19 +123,21 @@ const ProductDetail = () => {
 
   // Handle Add to Cart
   const handleAddToCart = () => {
-    if (!requireAuth('cart')) return;
-    
+    if (!requireAuth()) return;
+
     // Create cart item
     const cartItem: CartItem = {
       id: `${id}-${selectedVariation?.id || 'default'}-${Date.now()}`,
       productId: id || '',
       variationId: selectedVariation?.id,
-      name: selectedVariation?.name || product?.name || 'eSIM',
+      name: esimPackage?.name || selectedVariation?.name || product?.name || 'eSIM',
       quantity: quantity,
       price: currentPrice,
-      image: product?.images?.[0]?.src,
-      dataAmount: selectedVariation?.dataAmount,
-      validity: selectedVariation?.validity
+      image: esimPackage ? undefined : product?.images?.[0]?.src,
+      dataAmount: esimPackage?.dataAmount || selectedVariation?.dataAmount,
+      validity: esimPackage
+        ? `${esimPackage.duration} ${esimPackage.durationUnit}(s)`
+        : selectedVariation?.validity,
     };
 
     // Get existing cart from localStorage
@@ -244,7 +270,7 @@ const ProductDetail = () => {
     );
   }
 
-  if (error || !product) {
+  if ((error || !product) && !esimPackage) {
     return (
       <Layout>
         <div className="min-h-[60vh] flex items-center justify-center px-4">
@@ -265,15 +291,23 @@ const ProductDetail = () => {
     );
   }
 
-  const parsedContent = parseDescription(product.description || '');
-  const currentPrice = selectedVariation ? parseFloat(selectedVariation.price) : (product.price ? parseFloat(product.price) : 0);
+  const parsedContent = parseDescription(product?.description || '');
+  const currentPrice = esimPackage
+    ? esimPackage.price
+    : selectedVariation
+      ? parseFloat(selectedVariation.price)
+      : product?.price
+        ? parseFloat(product.price)
+        : 0;
   const totalPrice = currentPrice * quantity;
 
   // Get image URL
-  const imageUrl = product.images && product.images[0]?.src || 'https://placehold.co/400x300?text=eSIM';
-  
+  const imageUrl = esimPackage
+    ? `https://placehold.co/400x300/16a34a/ffffff?text=${encodeURIComponent(esimPackage.name)}`
+    : product?.images?.[0]?.src || 'https://placehold.co/400x300?text=eSIM';
+
   // Get country name from product name
-  const countryName = product.name || 'Unknown';
+  const countryName = esimPackage?.name || product?.name || 'Unknown';
 
   return (
     <Layout>
@@ -310,11 +344,15 @@ const ProductDetail = () => {
                   {countryName} eSIM
                 </h1>
                 
-                {/* Short description */}
-                {product.short_description && (
-                  <div 
+                {/* Short description / package summary */}
+                {esimPackage ? (
+                  <p className="text-muted-foreground mb-4">
+                    {esimPackage.dataAmount} data · {esimPackage.duration} {esimPackage.durationUnit}(s) · {esimPackage.location}
+                  </p>
+                ) : product?.short_description && (
+                  <div
                     className="text-muted-foreground mb-4 prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: product.short_description }}
+                    dangerouslySetInnerHTML={{ __html: product?.short_description ?? '' }}
                   />
                 )}
 
@@ -324,14 +362,14 @@ const ProductDetail = () => {
                     <Wifi className="h-5 w-5 mx-auto mb-2 text-primary" />
                     <p className="text-sm text-muted-foreground">Data</p>
                     <p className="font-bold text-foreground">
-                      {selectedVariation?.dataAmount || parsedContent.features?.['data-only'] || 'N/A'}
+                      {esimPackage?.dataAmount || selectedVariation?.dataAmount || parsedContent.features?.['data-only'] || 'N/A'}
                     </p>
                   </div>
                   <div className="bg-secondary/30 rounded-lg p-4 text-center">
                     <Clock className="h-5 w-5 mx-auto mb-2 text-primary" />
                     <p className="text-sm text-muted-foreground">Validity</p>
                     <p className="font-bold text-foreground">
-                      {selectedVariation?.validity || 'N/A'}
+                      {esimPackage ? `${esimPackage.duration} ${esimPackage.durationUnit}(s)` : (selectedVariation?.validity || 'N/A')}
                     </p>
                   </div>
                 </div>
@@ -413,7 +451,16 @@ const ProductDetail = () => {
                 <span className="text-3xl font-bold text-foreground">
                   ${currentPrice.toFixed(2)}
                 </span>
-                {product.regular_price && parseFloat(product.regular_price) > currentPrice && (
+                {esimPackage?.retailPrice && esimPackage.retailPrice > currentPrice ? (
+                  <>
+                    <span className="text-lg text-muted-foreground line-through">
+                      ${esimPackage.retailPrice.toFixed(2)}
+                    </span>
+                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-sm font-medium">
+                      Save ${(esimPackage.retailPrice - currentPrice).toFixed(2)}
+                    </span>
+                  </>
+                ) : product?.regular_price && parseFloat(product.regular_price) > currentPrice && (
                   <>
                     <span className="text-lg text-muted-foreground line-through">
                       ${parseFloat(product.regular_price).toFixed(2)}
@@ -517,10 +564,10 @@ const ProductDetail = () => {
               </div>
 
               {/* Purchase Note */}
-              {product.purchase_note && (
+              {product?.purchase_note && (
                 <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-lg text-sm">
                   <Info className="h-4 w-4 inline mr-1" />
-                  <span dangerouslySetInnerHTML={{ __html: product.purchase_note }} />
+                  <span dangerouslySetInnerHTML={{ __html: product?.purchase_note ?? '' }} />
                 </div>
               )}
             </div>

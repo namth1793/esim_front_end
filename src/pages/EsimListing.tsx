@@ -9,12 +9,55 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { useProducts } from "@/hooks/useApi";
+import { EsimAccessPackage, useEsimPackages } from "@/hooks/useApi";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
-// Region filters - chỉ 3 loại
+// Derive display region from eSIM Access location string (e.g. "VN,TH,JP" or "US,CA")
+const getRegionFromLocation = (location: string): string => {
+  if (!location) return "Global";
+  const locs = location.split(",").map(s => s.trim().toUpperCase());
+  if (locs.length > 5) return "Global";
+  if (locs.length > 1) return "Regional";
+  return "Local";
+};
+
+// Country code → display name (top entries)
+const countryMap: Record<string, string> = {
+  VN: "Vietnam", TH: "Thailand", JP: "Japan", KR: "South Korea",
+  US: "USA", CA: "Canada", GB: "United Kingdom", FR: "France",
+  DE: "Germany", SG: "Singapore", MY: "Malaysia", ID: "Indonesia",
+  PH: "Philippines", TW: "Taiwan", HK: "Hong Kong", AU: "Australia",
+  NZ: "New Zealand", IN: "India", CN: "China", IT: "Italy",
+  ES: "Spain", PT: "Portugal", NL: "Netherlands", BE: "Belgium",
+  ZA: "South Africa", EG: "Egypt", AE: "UAE", SA: "Saudi Arabia",
+  MX: "Mexico", BR: "Brazil", AR: "Argentina",
+};
+
+const getCountryName = (location: string): string => {
+  if (!location) return "International";
+  const codes = location.split(",").map(s => s.trim().toUpperCase());
+  if (codes.length === 1) return countryMap[codes[0]] || codes[0];
+  return codes.map(c => countryMap[c] || c).join(", ");
+};
+
+// Transform eSIM Access package → EsimProduct shape that EsimCard expects
+const transformPackage = (pkg: EsimAccessPackage) => ({
+  id: pkg.packageCode,
+  name: pkg.name,
+  country: getCountryName(pkg.location),
+  region: getRegionFromLocation(pkg.location),
+  dataAmount: pkg.dataAmount,
+  validity: `${pkg.duration} ${pkg.durationUnit}${pkg.duration > 1 ? "s" : ""}`,
+  price: pkg.price,
+  originalPrice: pkg.retailPrice > pkg.price ? pkg.retailPrice : undefined,
+  coverage: pkg.location.split(",").map(c => countryMap[c.trim()] || c.trim()),
+  image: `https://placehold.co/400x300/16a34a/ffffff?text=${encodeURIComponent(getCountryName(pkg.location))}`,
+  description: `${pkg.dataAmount} data · ${pkg.duration} ${pkg.durationUnit}(s) · ${getCountryName(pkg.location)}`,
+});
+
+// Region filters
 const regionFilters = ["All", "Local", "Regional", "Global"];
 
 const EsimListing = () => {
@@ -22,40 +65,23 @@ const EsimListing = () => {
   const [regionFilter, setRegionFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
-  
-  const { data: products = [], isLoading } = useProducts();
+
+  const { data: rawPackages = [], isLoading } = useEsimPackages();
+
+  // Transform + memoize
+  const products = useMemo(() => rawPackages.map(transformPackage), [rawPackages]);
 
   const filtered = useMemo(() => {
     return products.filter((e) => {
+      const q = search.toLowerCase();
       const matchesSearch =
-        e.country?.toLowerCase().includes(search.toLowerCase()) ||
-        e.name?.toLowerCase().includes(search.toLowerCase());
-      
-      // Xử lý region filter
-      let matchesRegion = regionFilter === "All";
-      
-      if (!matchesRegion) {
-        if (regionFilter === "Local") {
-          // Local: single country, not regional/global
-          matchesRegion = e.region === "Local" || 
-                         (e.country && e.country !== "Multiple Countries" && e.region !== "Regional" && e.region !== "Global");
-        } else if (regionFilter === "Regional") {
-          // Regional: multi-country within a region
-          matchesRegion = e.region === "Regional" || 
-                         (e.coverage?.length > 1 && e.region !== "Global") ||
-                         e.name?.toLowerCase().includes("europe") ||
-                         e.name?.toLowerCase().includes("asia") ||
-                         e.name?.toLowerCase().includes("america");
-        } else if (regionFilter === "Global") {
-          // Global: worldwide coverage
-          matchesRegion = e.region === "Global" || 
-                         e.coverage?.includes("Worldwide") ||
-                         e.name?.toLowerCase().includes("global");
-        }
-      } else {
-        matchesRegion = true;
-      }
-      
+        !search ||
+        e.country?.toLowerCase().includes(q) ||
+        e.name?.toLowerCase().includes(q);
+
+      const matchesRegion =
+        regionFilter === "All" || e.region === regionFilter;
+
       return matchesSearch && matchesRegion;
     });
   }, [search, regionFilter, products]);
@@ -151,7 +177,12 @@ const EsimListing = () => {
             <>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {paginatedProducts.map((esim, i) => (
-                  <EsimCard key={esim.id} esim={esim} index={i} />
+                  <EsimCard
+                    key={esim.id}
+                    esim={esim}
+                    index={i}
+                    linkState={{ esimPackage: rawPackages[rawPackages.findIndex(p => p.packageCode === esim.id)] }}
+                  />
                 ))}
               </div>
 
