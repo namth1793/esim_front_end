@@ -263,7 +263,7 @@ const ProductDetail = () => {
   const totalPrice = currentPrice * quantity;
 
   // Get image URL
-  const imageUrl = product.images && product.images[0]?.src || '/placeholder-image.jpg';
+  const imageUrl = product.images && product.images[0]?.src || 'https://placehold.co/400x300?text=eSIM';
   
   // Get country name from product name
   const countryName = product.name || 'Unknown';
@@ -293,7 +293,7 @@ const ProductDetail = () => {
                   alt={countryName}
                   className="w-full h-full object-contain p-4"
                   onError={(e) => {
-                    e.currentTarget.src = '/placeholder-image.jpg';
+                    e.currentTarget.src = 'https://placehold.co/400x300?text=eSIM';
                   }}
                 />
               </div>
