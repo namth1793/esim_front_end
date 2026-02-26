@@ -9,56 +9,10 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { EsimAccessPackage, useEsimPackages } from "@/hooks/useApi";
+import { useProducts } from "@/hooks/useApi";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
-
-// Derive display region from eSIM Access location string (e.g. "VN,TH,JP" or "US,CA")
-const getRegionFromLocation = (location: string): string => {
-  if (!location) return "Global";
-  const locs = location.split(",").map(s => s.trim().toUpperCase());
-  if (locs.length > 5) return "Global";
-  if (locs.length > 1) return "Regional";
-  return "Local";
-};
-
-// Country code → display name (top entries)
-const countryMap: Record<string, string> = {
-  VN: "Vietnam", TH: "Thailand", JP: "Japan", KR: "South Korea",
-  US: "USA", CA: "Canada", GB: "United Kingdom", FR: "France",
-  DE: "Germany", SG: "Singapore", MY: "Malaysia", ID: "Indonesia",
-  PH: "Philippines", TW: "Taiwan", HK: "Hong Kong", AU: "Australia",
-  NZ: "New Zealand", IN: "India", CN: "China", IT: "Italy",
-  ES: "Spain", PT: "Portugal", NL: "Netherlands", BE: "Belgium",
-  ZA: "South Africa", EG: "Egypt", AE: "UAE", SA: "Saudi Arabia",
-  MX: "Mexico", BR: "Brazil", AR: "Argentina",
-};
-
-const getCountryName = (location: string): string => {
-  if (!location) return "International";
-  const codes = location.split(",").map(s => s.trim().toUpperCase());
-  if (codes.length === 1) return countryMap[codes[0]] || codes[0];
-  return codes.map(c => countryMap[c] || c).join(", ");
-};
-
-// Transform eSIM Access package → EsimProduct shape that EsimCard expects
-const transformPackage = (pkg: EsimAccessPackage) => ({
-  id: pkg.packageCode,
-  name: pkg.name,
-  country: getCountryName(pkg.location),
-  region: getRegionFromLocation(pkg.location),
-  dataAmount: pkg.dataAmount,
-  validity: `${pkg.duration} ${pkg.durationUnit}${pkg.duration > 1 ? "s" : ""}`,
-  price: pkg.price,
-  originalPrice: pkg.retailPrice > pkg.price ? pkg.retailPrice : undefined,
-  coverage: pkg.location.split(",").map(c => countryMap[c.trim()] || c.trim()),
-  image: `https://placehold.co/400x300/16a34a/ffffff?text=${encodeURIComponent(getCountryName(pkg.location))}`,
-  description: `${pkg.dataAmount} data · ${pkg.duration} ${pkg.durationUnit}(s) · ${getCountryName(pkg.location)}`,
-});
-
-// Region filters
-const regionFilters = ["All", "Local", "Regional", "Global"];
 
 const EsimListing = () => {
   const [search, setSearch] = useState("");
@@ -66,10 +20,13 @@ const EsimListing = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  const { data: rawPackages = [], isLoading } = useEsimPackages();
+  const { data: products = [], isLoading } = useProducts();
 
-  // Transform + memoize
-  const products = useMemo(() => rawPackages.map(transformPackage), [rawPackages]);
+  // Lấy danh sách region từ products
+  const regionFilters = useMemo(() => {
+    const unique = [...new Set(products.map(p => p.region).filter(Boolean))].sort();
+    return ["All", ...unique];
+  }, [products]);
 
   const filtered = useMemo(() => {
     return products.filter((e) => {
@@ -86,15 +43,12 @@ const EsimListing = () => {
     });
   }, [search, regionFilter, products]);
 
-  // Pagination logic
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filtered.slice(startIndex, endIndex);
-  }, [filtered, currentPage, itemsPerPage]);
+    return filtered.slice(startIndex, startIndex + itemsPerPage);
+  }, [filtered, currentPage]);
 
-  // Reset to first page when filters change
   const handleFilterChange = (newRegion: string, newSearch: string) => {
     setRegionFilter(newRegion);
     setSearch(newSearch);
@@ -132,7 +86,6 @@ const EsimListing = () => {
 
       <section className="py-8 md:py-8">
         <div className="container">
-          {/* Region Filters - ĐƯA VÀO GIỮA MÀN HÌNH */}
           <div className="flex justify-center mb-8">
             <div className="inline-flex flex-wrap gap-2 p-1 bg-secondary/30 rounded-full">
               {regionFilters.map((r) => (
@@ -151,7 +104,6 @@ const EsimListing = () => {
             </div>
           </div>
 
-          {/* Results count */}
           <div className="flex justify-between items-center mb-4">
             <p className="text-sm text-muted-foreground">
               {filtered.length} plan{filtered.length !== 1 ? "s" : ""} found
@@ -179,14 +131,12 @@ const EsimListing = () => {
                 {paginatedProducts.map((esim, i) => (
                   <EsimCard
                     key={esim.id}
-                    esim={esim}
+                    esim={{ ...esim, categories: esim.rawCategories }}
                     index={i}
-                    linkState={{ esimPackage: rawPackages[rawPackages.findIndex(p => p.packageCode === esim.id)] }}
                   />
                 ))}
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="mt-8 flex justify-center">
                   <Pagination>
@@ -197,9 +147,9 @@ const EsimListing = () => {
                           className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-primary/10"}
                         />
                       </PaginationItem>
-                      
+
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
+                        let pageNum: number;
                         if (totalPages <= 5) {
                           pageNum = i + 1;
                         } else if (currentPage <= 3) {
@@ -209,7 +159,7 @@ const EsimListing = () => {
                         } else {
                           pageNum = currentPage - 2 + i;
                         }
-                        
+
                         return (
                           <PaginationItem key={pageNum}>
                             <PaginationLink
@@ -222,7 +172,7 @@ const EsimListing = () => {
                           </PaginationItem>
                         );
                       })}
-                      
+
                       <PaginationItem>
                         <PaginationNext
                           onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
