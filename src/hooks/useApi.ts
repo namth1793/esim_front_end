@@ -184,10 +184,10 @@ const transformWooCommerceProduct = (product: any): EsimProduct => {
   
   // WooCommerce: price = current/sale price, regular_price = before discount
   // For variable products, price = minimum variation price
-  const price = safeParsePrice(product.price !== '' ? product.price : product.regular_price);
+  const price = safeParsePrice(product.price || product.regular_price || product.sale_price);
   const regularPrice = safeParsePrice(product.regular_price);
   const originalPrice =
-    product.sale_price && product.sale_price !== '' && regularPrice > price
+    regularPrice > price && regularPrice > 0
       ? regularPrice
       : undefined;
 
